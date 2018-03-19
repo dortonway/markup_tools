@@ -9,8 +9,7 @@
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.json :refer [wrap-json-params]]
             [clojure.data.csv :as csv]
-            [clojure.java.io :as io]
-            [clojure.core.async :refer [go-loop]]
+            [clojure.core.async :refer [go-loop chan put!]]
             [classification_checker.example :as example]
             [config.core :refer [env]]))
 
@@ -32,6 +31,16 @@
     [:body
      mount-target
      (include-js "/js/app.js")]))
+
+
+
+
+
+
+
+
+
+
 
 (defn if-login [session ok-response]
   (if (and (contains? session :user) (some? ((:user session) :email))) (ok-response) (forbidden)))
@@ -74,6 +83,13 @@
     (take n (shuffle coll)))
   (take-rand batch-size @input-queue))
 
+
+
+
+
+
+(defonce examples (chan))
+
 (defroutes routes
   (GET "/" [] (main-page))
   (GET "/paraphrase/current" {session :session} (if-login session main-page))
@@ -88,5 +104,13 @@
   (resources "/")
   (not-found "Not Found"))
 
-(def app (wrap-middleware #'routes))
+(def app [reader writer]
+  (->> (csv/read-csv reader)
+       (first)
+       (put! examples)
+
+       (map #(rest (butlast %)))
+       (csv/write-csv writer))
+
+  (wrap-middleware #'routes))
 
