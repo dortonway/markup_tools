@@ -1,7 +1,7 @@
 (ns classification_checker.middleware
   (:require [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [prone.middleware :refer [wrap-exceptions]]
-            [ring.middleware.json :refer [wrap-json-params wrap-json-response wrap-json-body]]
+            [ring.middleware.json :refer [wrap-json-params wrap-json-response]]
             [ring.middleware.keyword-params :refer [wrap-keyword-params]]
             [ring.middleware.session :refer [wrap-session]]
             [ring.middleware.reload :refer [wrap-reload]]))
@@ -10,7 +10,6 @@
   (-> handler
       wrap-keyword-params
       wrap-json-params
-      ;wrap-json-body
       wrap-json-response
       wrap-session
       (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] false))

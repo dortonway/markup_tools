@@ -38,7 +38,7 @@
                                    (if (nil? @current-task) (next-page!))))
 
 ;TODO
-(js/setInterval (fn [] (if (empty? @unchecked-tasks) (download-batch!))) 1000)
+(js/setInterval (fn [] (if (empty? @unchecked-tasks) (download-batch!))) 10000)
 (js/setInterval (fn [] (when (not-empty @checked-tasks)
                          (upload-batch! @checked-tasks (fn [] (reset! checked-tasks []))))) 10000)
 

@@ -1,8 +1,8 @@
 (ns classification_checker.repl
-  (:use classification_checker.handler
-        figwheel-sidecar.repl-api
+  (:use figwheel-sidecar.repl-api
         ring.server.standalone
-        [ring.middleware file-info file]))
+        [ring.middleware file-info file])
+  :require [classification-checker.server :refer [application]])
 
 (defonce server (atom nil))
 
@@ -11,7 +11,7 @@
   ;; the server is forced to re-resolve the symbol in the var
   ;; rather than having its own copy. When the root binding
   ;; changes, the server picks it up without having to restart.
-  (-> #'app
+  (-> #'application
       ; Makes static assets in $PROJECT_DIR/resources/public/ available.
       (wrap-file "resources")
       ; Content-Type, Content-Length, and Last Modified headers for files in body

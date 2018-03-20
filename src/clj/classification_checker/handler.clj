@@ -4,13 +4,11 @@
             [hiccup.page :refer [include-js include-css html5]]
             [ring.util.response :refer [response]]
             [ring.util.http-response :refer [accepted created ok see-other forbidden]]
-            [ring.middleware.json :refer [wrap-json-response]]
-            [classification_checker.middleware :refer [wrap-middleware]]
-            [ring.middleware.keyword-params :refer [wrap-keyword-params]]
-            [ring.middleware.json :refer [wrap-json-params]]
-            [clojure.data.csv :as csv]
-            [clojure.core.async :refer [go-loop chan put!]]
+            [clojure.core.async :as async :refer [<!! put!]]
+            [clj-time.core :as time]
+            [clj-time.coerce :as tc]
             [classification_checker.example :as example]
+            [classification_checker.middleware :refer [wrap-middleware]]
             [config.core :refer [env]]))
 
 (use 'ring.middleware.session.cookie)
@@ -32,16 +30,6 @@
      mount-target
      (include-js "/js/app.js")]))
 
-
-
-
-
-
-
-
-
-
-
 (defn if-login [session ok-response]
   (if (and (contains? session :user) (some? ((:user session) :email))) (ok-response) (forbidden)))
 
@@ -49,68 +37,26 @@
   (-> (see-other "/paraphrase/current")
       (assoc-in [:session :user] user)))
 
-(defn csv-data->maps [csv-data]
-  (map zipmap
-       (->> (first csv-data) ;; First row is the header
-            (map keyword) ;; Drop if you want string keys instead
-            repeat)
-       (rest csv-data)))
+(defn app [in-ch out-ch]
+  (defroutes routes
+             (GET "/" [] (main-page))
+             (GET "/paraphrase/current" {session :session} (if-login session main-page))
+             (GET "/session/new" [] (main-page))
+             (POST "/session/new" [& req] (login! (:user req)))
+             (GET "/batch" {session :session} (if-login session #(response {:batch (->> (async/take 10 in-ch)
+                                                                                        (async/into [])
+                                                                                        (<!!)) })))
+             (POST "/batch" {session :session body :params}
+               (if-login session (fn [] (let [email (:email (:user session))
+                                              batch-time (str (tc/to-long (time/now)))]
+                                          (doseq [ex (->> (:batch body)
+                                                          (map (fn [ex]
+                                                                 (example/->ParaphraseExample (:utterance1 ex) (:utterance2 ex) (:is-same? ex) email batch-time))))]
+                                            (put! out-ch ex)))
+                                   (accepted))))
 
-(def batch-size 2)
-(def flush-timeout 1000)
-
-(def input-queue (atom '[]))
-(def output-queue (atom '[]))
-
-(go-loop []
-  (do
-    (Thread/sleep flush-timeout)
-    (if (> (count @output-queue) batch-size)
-      (do
-        (with-open [writer (io/writer "checked.csv" :append true)]
-          (csv/write-csv writer (map vals @output-queue)))
-        (reset! output-queue '[])
-        ))
-    (recur)))
-
-(with-open [reader (io/reader "input.csv")]
-  (reset! input-queue (map (fn [ex]
-                             (example/paraphrase-example {:utterance1 (:question ex) :utterance2 (:class ex) }))
-                           (apply vector (csv-data->maps (csv/read-csv reader))))))
-
-(defn next-batch []
-  (defn take-rand [n coll]
-    (take n (shuffle coll)))
-  (take-rand batch-size @input-queue))
-
-
-
-
-
-
-(defonce examples (chan))
-
-(defroutes routes
-  (GET "/" [] (main-page))
-  (GET "/paraphrase/current" {session :session} (if-login session main-page))
-  (GET "/session/new" [] (main-page))
-  (POST "/session/new" [& req] (login! (:user req)))
-  (GET "/batch" {session :session} (if-login session #(response {:batch (next-batch)} )))
-  (POST "/batch" {session :session body :params}
-    (if-login session #(do
-                         (swap! output-queue concat (map (partial conj {:assessor (:email (:user session))}) (:batch body)))
-                         (accepted))))
-
-  (resources "/")
-  (not-found "Not Found"))
-
-(def app [reader writer]
-  (->> (csv/read-csv reader)
-       (first)
-       (put! examples)
-
-       (map #(rest (butlast %)))
-       (csv/write-csv writer))
+             (resources "/")
+             (not-found "Not Found"))
 
   (wrap-middleware #'routes))
 
