@@ -6,6 +6,9 @@
 
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [antizer "0.2.2"]
+                 [http-kit "2.2.0"]
+                 [com.taoensso/sente "1.12.0"]
+                 [secretary "1.2.3"]
                  [ring-server "0.5.0"]
                  [reagent "0.7.0"]
                  [reagent-utils "0.3.1"]
@@ -13,10 +16,10 @@
                  [ring/ring-defaults "0.3.1"]
                  [compojure "1.6.0"]
                  [hiccup "1.0.5"]
+                 [com.taoensso/sente "1.12.0"]
                  [yogthos/config "1.1"]
                  [org.clojure/clojurescript "1.9.946"
                   :scope "provided"]
-                 [secretary "1.2.3"]
                  [keybind "2.2.0"]
                  [cljs-http "0.1.44"]
                  [com.andrewmcveigh/cljs-time "0.5.2"]
@@ -73,9 +76,6 @@
               :source-map true
               :optimizations :none
               :pretty-print  true}}
-
-
-
             }
    }
 

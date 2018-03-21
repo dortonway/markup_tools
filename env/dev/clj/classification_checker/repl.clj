@@ -1,8 +1,8 @@
 (ns classification_checker.repl
   (:use figwheel-sidecar.repl-api
-        ring.server.standalone
         [ring.middleware file-info file])
-  :require [classification-checker.server :refer [application]])
+  :require  [classification-checker.server :refer [application]]
+            [org.httpkit.server :refer [run-server]])
 
 (defonce server (atom nil))
 
@@ -21,11 +21,7 @@
   "used for starting the server in development mode from REPL"
   [& [port]]
   (let [port (if port (Integer/parseInt port) 3000)]
-    (reset! server
-            (serve (get-handler)
-                   {:port port
-                    :auto-reload? true
-                    :join? false}))
+    (reset! server (run-server (get-handler) {:port port}))
     (println (str "You can view the site at http://localhost:" port))))
 
 (defn stop-server []

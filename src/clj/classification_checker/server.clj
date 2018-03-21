@@ -5,7 +5,7 @@
             [config.core :refer [env]]
             [clojure.core.async :refer [go chan >! <!] :as async]
             [clojure.data.csv :as csv]
-            [ring.adapter.jetty :refer [run-jetty]])
+            [org.httpkit.server :refer [run-server]])
   (:gen-class))
 
 
@@ -51,4 +51,4 @@
 
 (defn -main [& args]
   (let [port (Integer/parseInt (or (env :port) "3000"))]
-    (run-jetty application {:port port :join? false})))
+    (run-server application {:port port})))
