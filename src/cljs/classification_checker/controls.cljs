@@ -14,9 +14,9 @@
    [ant/col {:span 2} [ant/button {:class "right-example" :size "large" :type "primary" :icon "check" :on-click on-ok}]] ])
 
 (defn paraphrase-view [title example]
-  (defn click-right [] (dispatcher/emit :marked-right (example/id example)))
-  (defn click-wrong [] (dispatcher/emit :marked-wrong (example/id example)))
-  (defn click-skip [] (dispatcher/emit :skipped (example/id example)))
+  (defn click-right [] (dispatcher/emit :example-updated (example/right example)))
+  (defn click-wrong [] (dispatcher/emit :example-updated (example/wrong example)))
+  (defn click-skip [] (dispatcher/emit :example-updated example))
 
   (key/bind! "r" ::next click-right)
   (key/bind! "w" ::next click-wrong)
