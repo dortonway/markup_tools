@@ -1,25 +1,43 @@
+---
 - hosts: tools
+  become: yes
   tasks:
-    - name: Installs java
-      apt: pkg=openjdk-8-jdk state=installed update_cache=true
-    - name: Installs zsh
-      apt: pkg=zsh state=installed update_cache=true
-    - name: Installs tree
-      apt: pkg=tree state=installed update_cache=true
-    - name: Installs rlwrap
-      apt: pkg=rlwrap state=installed update_cache=true
-    - name: Installs tmux
-      apt: pkg=tmux state=installed update_cache=true
+  - name: Installs software
+    block:    
+    - apt: pkg={{ item }} state=installed update_cache=true
+      with_items:
+      - openjdk-8-jdk
+      - zsh
+      - rlwrap
+      - tree
+      - tmux
+      - curl   # need for script
+  - name: Download and execute lein script
+    block:
+    - file: path=/opt/lein state=directory
+    - get_url: url=https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein dest=/opt/lein/lein
+    - file: path=/opt/lein/lein mode=a+x
+    - shell: /opt/lein/lein
+  - name: Download and execute the clojure script
+    block:
+    - file: path=/opt/clojure state=directory
+    - get_url: url=https://download.clojure.org/install/linux-install-1.9.0.358.sh dest=/opt/clojure/linux-install-1.9.0.358.sh
+    - file: path=/opt/clojure/linux-install-1.9.0.358.sh mode=a+x
+    - shell: /opt/clojure/linux-install-1.9.0.358.sh
 
-    - user:
-        name: vadim
-        shell: /bin/zsh
-        groups: sudo,adm
-        password: $1$SomeSalt$.SUxxp6Ii0ddWXBXurdLE.
-        append: yes
+  - user:                                                           
+     name: "{{ usradd }}"                                 # all group variables in the main inventory file
+     shell: /bin/zsh
+     groups: sudo,adm
+     password: "{{ pass_hash }}"
+     append: yes
 
-    - name: Set authorized key took from file
-      authorized_key:
-        user: vadim
-        state: present
-        key: "{{ lookup('file', '/home/vad/.ssh/id_rsa.pub') }}"
+  - name: Set authorized key took from file
+    authorized_key:                                                
+     user: "{{ usradd }}" 
+     state: present
+     key: "{{ lookup('file', '/home/{{ usradd }}/.ssh/id_rsa.pub') }}"    
+
+  - name: Adding the path in the bashrc files            #for work in zsh add in the path: /opt/lein/:
+    lineinfile: dest=/home/{{ usradd }}/.bashrc line='PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/opt/lein/:"' insertafter='EOF' state=present
+    
