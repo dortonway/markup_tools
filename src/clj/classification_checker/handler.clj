@@ -69,15 +69,6 @@
              (GET "/" [] (main-page *anti-forgery-token*))
              (POST "/session/new" req (login-handler req))
 
-            ; (POST "/batch" {session :session body :params}
-            ;   (if-login session (fn [] (let [email (:email (:user session))
-            ;                                  batch-time (str (tc/to-long (time/now)))]
-            ;                              (doseq [ex (->> (:batch body)
-            ;                                              (map (fn [ex]
-            ;                                                     (example/->ParaphraseExample (:utterance1 ex) (:utterance2 ex) (:is-same? ex) email batch-time))))]
-            ;                                (put! out-ch ex)))
-            ;                       (accepted))))
-
              (resources "/")
              (not-found "Not Found"))
 

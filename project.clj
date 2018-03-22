@@ -7,7 +7,6 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [antizer "0.2.2"]
                  [http-kit "2.2.0"]
-                 [com.taoensso/sente "1.12.0"]
                  [secretary "1.2.3"]
                  [ring-server "0.5.0"]
                  [reagent "0.7.0"]
