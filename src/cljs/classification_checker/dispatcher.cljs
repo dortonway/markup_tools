@@ -1,6 +1,6 @@
 (ns classification_checker.dispatcher
   (:require-macros
-    [cljs.core.async.macros :refer [go-loop]])
+    [cljs.core.async.macros :refer [go go-loop]])
   (:require
     [cljs.core.async :refer [chan put! <! >!]]))
 
@@ -18,3 +18,4 @@
     (recur))
 
 (defn emit [action payload] (put! event-queue {:action action :payload payload}))
+

@@ -1,34 +1,58 @@
 (ns classification_checker.services
-  (:require-macros [cljs.core.async.macros :refer [go]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]])
   (:require
     [classification_checker.dispatcher :as dispatcher]
     [cljs-http.client :as http]
     [classification_checker.example :as example]
+    [taoensso.sente  :as sente :refer (cb-success?)]
     [cljs.core.async :refer [<!]]))
+
+(enable-console-print!)
+
+(defonce router_ (atom nil))
+(defn  stop-receive-loop! [] (when-let [stop-f @router_] (stop-f)))
+
+(defonce upload_ (atom nil))
+
+(defn open-socket! []
+  (let [packer :edn
+        {:keys [chsk ch-recv send-fn state]} (sente/make-channel-socket! "/data" {:type :auto :packer packer})]
+    (def chsk       chsk)
+    (def ch-items    ch-recv) ; ChannelSocket's receive channel
+    (def chsk-send! send-fn) ; ChannelSocket's send API fn
+    (def chsk-state state)   ; Watchable, read-only atom
+
+    (stop-receive-loop!)
+    (reset! router_
+            (sente/start-client-chsk-router! ch-items (fn [{:keys [?data]}]
+                                                        (let [[id item] ?data]
+                                                          (cond
+                                                            (not (nil? (:last-ws-error (first ?data)))) (dispatcher/emit :login-needed nil)
+                                                            (= id :data/item-received) (dispatcher/emit :downloaded (example/paraphrase-example item)))))
+
+                                             ))
+    (reset! upload_ chsk-send!)))
+
+
+(defn upload! [example] (@upload_ [:data/checked (into {} example)]))
 
 (defn redirect! [loc] (set! (.-location js/window) loc))
 
-(defn process-response! [response ok-callback]
-  (cond
-    (<= 200 (:status response) 299) (ok-callback)
-    (= (:status response) 403) (dispatcher/emit :login-needed nil)
-    :else (binding [*print-fn* *print-err-fn*] (println (str "error code " (:status response))))))
+;TODO
+(defn create-session! [user callback]
 
-(defn create-session! [user]
-  (go (let [response (<! (http/post "/session/new" {:with-credentials? false :json-params {:user (clj->js user)}}))]
-        (process-response! response (fn [] (redirect! "/paraphrase/current"))))))
+  (defn process-response! [response ok-callback]
+    (cond
+      (<= 200 (:status response) 299) (do (open-socket!) (ok-callback))
+      (= (:status response) 403) (redirect! "/")
+      :else (binding [*print-fn* *print-err-fn*] (println (str "error code " (:status response))))))
 
-(defn download-batch! []
-  (go (let [
-            response (<! (http/get "/batch" {:with-credentials? false}))
-            batch (:batch (js->clj(:body response)))
-            examples (into (hash-map) (map (fn [ex] (let [
-                                                                 example (example/paraphrase-example ex)]
-                                                   {(example/id example) example} )) batch))
-            ]
-        (process-response! response (fn [] (dispatcher/emit :downloaded examples))))))
+  (stop-receive-loop!)
 
-(defn upload-batch! [checked-tasks callback] (go (let [
-                                 response (<! (http/post "/batch" {:with-credentials? false :json-params {:batch checked-tasks}}))]
-                             (process-response! response callback))))
-
+  (go (let [marshaled-user {:user (clj->js user)}
+            csrf-token (.getAttribute (.querySelector js/document "meta[name=csrf-token]") "content")
+            response (<! (http/post "/session/new"
+                                    {:with-credentials? false
+                                     :json-params marshaled-user
+                                     :headers {"x-csrf-token" csrf-token}}))]
+        (process-response! response callback))))

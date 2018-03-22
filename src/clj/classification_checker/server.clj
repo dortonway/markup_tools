@@ -37,13 +37,10 @@
   (go
     (with-open [writer (io/writer fout)]
       (loop []
-        (let [batch (->>
-                      (async/take 10 out-examples)
-                      (async/into [])
-                      (<!)
-                      (map vals))]
-          (csv/write-csv writer batch)
-          (.flush writer))
+        (let [example (<! out-examples)]
+          (csv/write-csv writer (conj [] (vals example)))
+          (.flush writer)
+          )
         (recur))))
   out-examples)
 
