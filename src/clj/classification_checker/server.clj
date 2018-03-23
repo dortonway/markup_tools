@@ -1,7 +1,6 @@
 (ns classification-checker.server
   (:require [classification-checker.handler :refer [app]]
             [config.core :refer [env]]
-            [clojure.core.async :refer [go chan >! <!]]
             [org.httpkit.server :refer [run-server]])
   (:gen-class))
 
