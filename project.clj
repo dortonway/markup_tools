@@ -39,6 +39,8 @@
 
   :min-lein-version "2.5.0"
 
+  :jvm-opts ["--add-modules" "java.xml.bind"]
+
   :uberjar-name "classification_checker.jar"
 
   :main classification-checker.server
