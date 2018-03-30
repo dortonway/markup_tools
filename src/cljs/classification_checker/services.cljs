@@ -5,6 +5,10 @@
     [cljs-http.client :as http]
     [classification_checker.example :as example]
     [taoensso.sente  :as sente :refer (cb-success?)]
+    [taoensso.timbre :as timbre
+     :refer-macros [log  trace  debug  info  warn  error  fatal  report
+                    logf tracef debugf infof warnf errorf fatalf reportf
+                    spy get-env]]
     [cljs.core.async :refer [<!]]))
 
 (enable-console-print!)
@@ -22,15 +26,15 @@
     (def chsk-send! send-fn) ; ChannelSocket's send API fn
     (def chsk-state state)   ; Watchable, read-only atom
 
+
     (stop-receive-loop!)
     (reset! router_
             (sente/start-client-chsk-router! ch-items (fn [{:keys [?data]}]
+                                                        (debug (str "Received" ?data))
                                                         (let [[id item] ?data]
                                                           (cond
-                                                            (not (nil? (:last-ws-error (first ?data)))) (dispatcher/emit :login-needed nil)
-                                                            (= id :data/item-received) (dispatcher/emit :downloaded (example/paraphrase-example item)))))
-
-                                             ))
+                                                            (not (nil? (:last-ws-error (first ?data)))) (dispatcher/emit :session-needed nil)
+                                                            (= id :data/item-received) (dispatcher/emit :downloaded (example/paraphrase-example item)))))))
     (reset! upload_ chsk-send!)))
 
 

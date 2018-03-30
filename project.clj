@@ -16,6 +16,7 @@
                  [compojure "1.6.0"]
                  [hiccup "1.0.5"]
                  [com.taoensso/sente "1.12.0"]
+                 [com.taoensso/timbre "4.10.0"]
                  [yogthos/config "1.1"]
                  [org.clojure/clojurescript "1.9.946"
                   :scope "provided"]
@@ -76,17 +77,14 @@
               :output-dir "target/cljsbuild/public/js/out"
               :source-map true
               :optimizations :none
-              :pretty-print  true}}
-            }
-   }
-
+              :pretty-print  true}}}}
 
   :figwheel
   {:http-server-root "public"
    :server-port 3449
    :nrepl-port 7002
-   :nrepl-middleware ["cemerick.piggieback/wrap-cljs-repl"
-                      ]
+   :nrepl-middleware ["cemerick.piggieback/wrap-cljs-repl"]
+                      
    :css-dirs ["resources/public/css"]
    :ring-handler classification-checker.server/application}
 
@@ -102,13 +100,10 @@
                                   [figwheel-sidecar "0.5.15"]
                                   [org.clojure/tools.nrepl "0.2.13"]
                                   [com.cemerick/piggieback "0.2.2"]
-                                  [pjstadig/humane-test-output "0.8.3"]
-                                  
- ]
+                                  [pjstadig/humane-test-output "0.8.3"]]
 
                    :source-paths ["env/dev/clj"]
-                   :plugins [[lein-figwheel "0.5.15"]
-]
+                   :plugins [[lein-figwheel "0.5.15"]]
 
                    :injections [(require 'pjstadig.humane-test-output)
                                 (pjstadig.humane-test-output/activate!)]
