@@ -3,7 +3,6 @@
   (:require
     [classification_checker.dispatcher :as dispatcher]
     [cljs-http.client :as http]
-    [classification_checker.example :as example]
     [taoensso.sente  :as sente :refer (cb-success?)]
     [taoensso.timbre :as timbre
      :refer-macros [log  trace  debug  info  warn  error  fatal  report
@@ -22,7 +21,7 @@
   (let [packer :edn
         {:keys [chsk ch-recv send-fn state]} (sente/make-channel-socket! "/data" {:type :auto :packer packer})]
     (def chsk       chsk)
-    (def ch-items    ch-recv) ; ChannelSocket's receive channel
+    (def ch-items   ch-recv) ; ChannelSocket's receive channel
     (def chsk-send! send-fn) ; ChannelSocket's send API fn
     (def chsk-state state)   ; Watchable, read-only atom
 
@@ -34,11 +33,11 @@
                                                         (let [[id item] ?data]
                                                           (cond
                                                             (not (nil? (:last-ws-error (first ?data)))) (dispatcher/emit :session-needed nil)
-                                                            (= id :data/item-received) (dispatcher/emit :downloaded (example/paraphrase-example item)))))))
+                                                            (= id :data/item-received) (dispatcher/emit :downloaded item))))))
     (reset! upload_ chsk-send!)))
 
 
-(defn upload! [example] (@upload_ [:data/checked (into {} example)]))
+(defn upload! [example] (@upload_ [:data/checked example]))
 
 (defn redirect! [loc] (set! (.-location js/window) loc))
 
