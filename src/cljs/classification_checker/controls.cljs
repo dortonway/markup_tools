@@ -82,4 +82,8 @@
                                     (ant/decorate-field form "email" {:rules [{:required true} {:type "email"}]} [ant/input])] ;TODO
                                    [ant/form-item
                                     [:div {:style {:text-align "center"}}
-                                     [ant/button {:type "primary" :html-type "submit"} "ok"] ]]]]))))
+                                     [ant/button {:type "primary" :html-type "submit"} "ok"] ]]
+                                   ]
+                                  [:a {:style {:text-align "center"} :href "https://www.facebook.com/v2.12/dialog/oauth?client_id=156944108305904&redirect_uri=https://localhost:3449/facebook-oauth&scope=email"}
+                                    "facebook" ]
+                                  ]))))
