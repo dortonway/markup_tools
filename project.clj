@@ -24,6 +24,8 @@
                  [cljs-http "0.1.44"]
                  [com.andrewmcveigh/cljs-time "0.5.2"]
                  [clj-time "0.14.2"]
+                 [clj-http "3.8.0"]
+                 [org.clojure/data.json "0.2.6"]
                  [metosin/ring-http-response "0.9.0"]
                  [ring/ring-json "0.4.0"]
                  [org.clojure/data.csv "0.1.4"]
