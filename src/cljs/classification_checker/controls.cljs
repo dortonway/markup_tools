@@ -11,6 +11,9 @@
     [classification_checker.dispatcher :as dispatcher]
     [clojure.string :as str]))
 
+(def client-id 156944108305904)
+(def redirect-uri "https://localhost:3449/facebook-oauth")
+
 (defn buttons [on-ok on-cancel on-skip]
   (key/bind! "r" ::next on-ok)
   (key/bind! "w" ::next on-cancel)
@@ -84,6 +87,6 @@
                                     [:div {:style {:text-align "center"}}
                                      [ant/button {:type "primary" :html-type "submit"} "ok"] ]]
                                    ]
-                                  [:a {:style {:text-align "center"} :href "https://www.facebook.com/v2.12/dialog/oauth?client_id=156944108305904&redirect_uri=https://localhost:3449/facebook-oauth&scope=email"}
+                                  [:a {:style {:text-align "center"} :href (str "https://www.facebook.com/v2.12/dialog/oauth?client_id=" client-id "&redirect_uri=" redirect-uri "&scope=email")}
                                     "facebook" ]
                                   ]))))
