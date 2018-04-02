@@ -8,7 +8,8 @@
                     logf tracef debugf infof warnf errorf fatalf reportf
                     spy get-env]]
     [classification_checker.user :as user]
-    [classification_checker.dispatcher :as dispatcher]))
+    [classification_checker.dispatcher :as dispatcher]
+    [clojure.string :as str]))
 
 (defn buttons [on-ok on-cancel on-skip]
   (key/bind! "r" ::next on-ok)
@@ -39,27 +40,21 @@
            (r/as-element [buttons click-right click-wrong click-skip]))]]])
     (error (str "A paraphrase must have exactly 2 values:" (str example)))))
 
-;
-;(defn classification-view [title example]
-;  [ant/locale-provider {:locale (ant/locales "ru_RU")}
-;   [ant/layout
-;    [ant/layout-header [:div "Hello"] ]
-;    [ant/layout-content {:class "content"}
-;     (if (nil? example) [:div]
-;                        [:div {:style {:width "100%"}}
-;                         [:div {:class "example"} (:utterance1 example)]
-;                         [:div {:class "example-class"} (:utterance2 example)] ])]
-;    [ant/layout-footer {:class "footer"}
-;     [ant/select {:style {:width "70%"}}
-;      [ant/select-option {:value "en_US"} "English"]
-;      [ant/select-option {:value "es_ES"} "Español"]
-;      [ant/select-option {:value "de_DE"} "Deutsch"]
-;      [ant/select-option {:value "ru_RU"} "Русский"]
-;      [ant/select-option {:value "zh_CN"} "中文"]
-;      [ant/select-option {:value "ja_JP"} "日本語"]]
-;     (if (nil? example)
-;       (r/as-element [buttons nil nil nil])
-;       (r/as-element [buttons click-right click-wrong click-skip]))]]])
+
+(defn classification-view [title example]
+  (let [[question answers_str] example
+         no-answer "(Нет подходящего ответа)"
+         answers (str/split answers_str #"\|")]
+    [ant/locale-provider {:locale (ant/locales "ru_RU")}
+     [ant/layout
+      [ant/layout-header [:div title]]
+      [ant/layout-content {:class "content"}
+       [:div {:style {:width "100%"}}
+        [:div {:class "example"} question]]]
+      [ant/layout-footer {:class "footer"}
+       [ant/select {:default-value no-answer :on-change #(dispatcher/emit :example-updated [question %]) :style {:width "70%"}}
+        (for [a (concat [no-answer] answers)]
+          [ant/select-option {:value a} a])]]]]))
 
 
 (defn identification-view []
