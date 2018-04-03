@@ -56,7 +56,7 @@
          [:div {:class "example"} question]
          [ant/row
           [ant/col {:span 12}
-           [ant/select {:default-value no-answer :on-change #(reset! selected-answer %)}
+           [ant/select {:default-value no-answer :on-change #(reset! selected-answer %) #_:style #_{:width "1000"}} ; TODO make width 100%
             (for [a (concat [no-answer skip-answer] answers)]
               [ant/select-option {:value a} a])]]]]
         [ant/layout-footer {:class "footer"}
@@ -79,7 +79,7 @@
                                  [:div {:style { :display "flex" :align-items "center" :justify-content "center" :height "100%"} }
                                   [ant/form {:layout "horizontal" :on-submit #(do (.preventDefault %) (submit-handler))}
                                    [ant/form-item {:label "Email"}
-                                    (ant/decorate-field form "email" {:initial-value "rar@gds.rr" :rules [{:required true} {:type "email"}]} [ant/input])] ;TODO
+                                    (ant/decorate-field form "email" {:rules [{:required true} {:type "email"}]} [ant/input])] ;TODO
                                    [ant/form-item
                                     [:div {:style {:text-align "center"}}
                                      [ant/button {:type "primary" :html-type "submit"} "ok"] ]]]]))))

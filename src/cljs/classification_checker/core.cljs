@@ -7,8 +7,7 @@
             [reagent.core :as reagent]
             [secretary.core :as secretary :include-macros true]
             [accountant.core :as accountant]
-            [clojure.string :as string]
-            [classification_checker.user :refer [user-info]]))
+            [clojure.string :as string]))
 
 (enable-console-print!)
 
