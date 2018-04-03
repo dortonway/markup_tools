@@ -26,16 +26,16 @@
   (let [{:keys [session params]} ring-req
         {:keys [user]} params
         {:keys [email]} user]
-    {:status (created) :session (assoc session :uid email)}))
+    {:status 201 :session (assoc session :uid email)}))
 
 (defn app [fin fout]
   (let [packer :edn
-        {:keys [ch-recv send-fn connected-uids ajax-post-fn ajax-get-or-ws-handshake-fn]} (sente/make-channel-socket! (get-sch-adapter) {:packer packer})]
-    (def ring-ajax-post                ajax-post-fn)
-    (def ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn)
-    (def ch-markup                     ch-recv)
-    (def data-send!                    send-fn)
-    (def connected-uids                connected-uids)
+        {:keys [ch-recv send-fn connected-uids ajax-post-fn ajax-get-or-ws-handshake-fn]} (sente/make-channel-socket! (get-sch-adapter) {:packer packer})
+        ring-ajax-post ajax-post-fn
+        ring-ajax-get-or-ws-handshake ajax-get-or-ws-handshake-fn
+        ch-markup ch-recv
+        data-send! send-fn
+        connected-uids connected-uids]
 
     (defonce busy-users (atom (set [])))
     (defn free-users [] (set/difference (set (get-in @connected-uids [:any])) @busy-users))
@@ -49,7 +49,7 @@
                 time (str (tc/to-long (time/now)))]
             (cond
               (= id :chsk/uidport-open) (prn (str "user " ?data " connected!"))
-              (= id :data/checked) (let [params [[time uid (:utterance1 ?data) (:utterance2 ?data) (:is-same? ?data)]]]
+              (= id :data/checked) (let [params [(concat [time uid] ?data)]]
                                      (csv/write-csv writer params)
                                      (.flush writer)
                                      (swap! busy-users disj uid))))
@@ -60,24 +60,24 @@
       (with-open [reader (io/reader fin)]
         (loop []
           (if-let [uid (first (shuffle (free-users)))]
-            (if-let [[utterance1 utterance2]
+            (if-let [row
                      (->> (csv/read-csv reader)
                           (first))]
               (do
                 (swap! busy-users conj uid)
-                (data-send! uid [:data/item-received {:utterance1 utterance1 :utterance2 utterance2}]))
+                (data-send! uid [:data/item-received row])) ; TODO: do we need to know when the task was sent?
               (System/exit 0))
             (Thread/sleep 1000))
-          (recur)))))
+          (recur))))
 
-  (defroutes routes
-             (GET  "/data" req (if-login req #(ring-ajax-get-or-ws-handshake req)))
-             (POST "/data" req (if-login req #(ring-ajax-post req)))
+    (defroutes routes
+               (GET "/data" req (if-login req #(ring-ajax-get-or-ws-handshake req)))
+               (POST "/data" req (if-login req #(ring-ajax-post req)))
 
-             (GET "/" [] (main-page *anti-forgery-token*))
-             (POST "/session/new" req (login-handler req))
+               (GET "/" [] (main-page *anti-forgery-token*))
+               (POST "/session/new" req (login-handler req))
 
-             (resources "/")
-             (not-found "Not Found"))
+               (resources "/")
+               (not-found "Not Found"))
 
-  (wrap-middleware #'routes))
+    (wrap-middleware #'routes)))

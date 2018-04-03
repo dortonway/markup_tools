@@ -4,7 +4,7 @@
             [org.httpkit.server :refer [run-server]])
   (:gen-class))
 
-(def application (app "first_classification.csv" "checked.csv"))
+(def application (app "classification_zpp_input.csv" "classification_zpp_output.csv"))
 
 (defn -main [& args]
   (let [port (Integer/parseInt (or (env :port) "3000"))]

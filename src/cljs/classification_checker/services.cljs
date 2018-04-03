@@ -3,8 +3,11 @@
   (:require
     [classification_checker.dispatcher :as dispatcher]
     [cljs-http.client :as http]
-    [classification_checker.example :as example]
     [taoensso.sente  :as sente :refer (cb-success?)]
+    [taoensso.timbre :as timbre
+     :refer-macros [log  trace  debug  info  warn  error  fatal  report
+                    logf tracef debugf infof warnf errorf fatalf reportf
+                    spy get-env]]
     [cljs.core.async :refer [<!]]))
 
 (enable-console-print!)
@@ -18,23 +21,28 @@
   (let [packer :edn
         {:keys [chsk ch-recv send-fn state]} (sente/make-channel-socket! "/data" {:type :auto :packer packer})]
     (def chsk       chsk)
-    (def ch-items    ch-recv) ; ChannelSocket's receive channel
+    (def ch-items   ch-recv) ; ChannelSocket's receive channel
     (def chsk-send! send-fn) ; ChannelSocket's send API fn
     (def chsk-state state)   ; Watchable, read-only atom
+
 
     (stop-receive-loop!)
     (reset! router_
             (sente/start-client-chsk-router! ch-items (fn [{:keys [?data]}]
                                                         (let [[id item] ?data]
                                                           (cond
-                                                            (not (nil? (:last-ws-error (first ?data)))) (dispatcher/emit :login-needed nil)
-                                                            (= id :data/item-received) (dispatcher/emit :downloaded (example/paraphrase-example item)))))
-
-                                             ))
+                                                            (= id :data/item-received) (dispatcher/emit :downloaded item)
+                                                            (= id :chsk/ws-ping) (chsk-send! [:chsk/ws-ping nil])
+                                                            (not (symbol? id)) (debug "Strange event." id)
+                                                            (= 4 (count ?data)) (debug "Strange event." ?data "Just ignore it.")
+                                                            :else (do
+                                                                    (debug "unexpected message " id ?data)
+                                                                    (dispatcher/emit :session-needed nil))
+                                                            )))))
     (reset! upload_ chsk-send!)))
 
 
-(defn upload! [example] (@upload_ [:data/checked (into {} example)]))
+(defn upload! [example] (@upload_ [:data/checked example]))
 
 (defn redirect! [loc] (set! (.-location js/window) loc))
 
