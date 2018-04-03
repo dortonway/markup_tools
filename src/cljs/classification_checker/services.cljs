@@ -29,11 +29,16 @@
     (stop-receive-loop!)
     (reset! router_
             (sente/start-client-chsk-router! ch-items (fn [{:keys [?data]}]
-                                                        (debug (str "Received" ?data))
                                                         (let [[id item] ?data]
                                                           (cond
-                                                            (not (nil? (:last-ws-error (first ?data)))) (dispatcher/emit :session-needed nil)
-                                                            (= id :data/item-received) (dispatcher/emit :downloaded item))))))
+                                                            (= id :data/item-received) (dispatcher/emit :downloaded item)
+                                                            (= id :chsk/ws-ping) (chsk-send! [:chsk/ws-ping nil])
+                                                            (not (symbol? id)) (debug "Strange event." id)
+                                                            (= 4 (count ?data)) (debug "Strange event." ?data "Just ignore it.")
+                                                            :else (do
+                                                                    (debug "unexpected message " id ?data)
+                                                                    (dispatcher/emit :session-needed nil))
+                                                            )))))
     (reset! upload_ chsk-send!)))
 
 

@@ -26,7 +26,7 @@
   (let [{:keys [session params]} ring-req
         {:keys [user]} params
         {:keys [email]} user]
-    {:status (created) :session (assoc session :uid email)}))
+    {:status 201 :session (assoc session :uid email)}))
 
 (defn app [fin fout]
   (let [packer :edn

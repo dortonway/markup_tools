@@ -24,7 +24,7 @@
 
 (defn current-page [] [(session/get :current-page)])
 
-(secretary/defroute "/" [] (session/put! :current-page check-markup-page))
+(secretary/defroute "/" [] (session/put! :current-page login-page))
 
 ;; -------------------------
 ;; View handlers
@@ -44,6 +44,4 @@
     {:nav-handler (fn [path] (secretary/dispatch! path))
      :path-exists? (fn [path] (secretary/locate-route path))})
   (accountant/dispatch-current!)
-  (reagent/render [current-page] (.getElementById js/document "app"))
-
-  (dispatcher/emit :session-created (user-info "test@test.com")))
+  (reagent/render [current-page] (.getElementById js/document "app")))

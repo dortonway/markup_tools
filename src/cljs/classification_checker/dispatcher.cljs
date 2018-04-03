@@ -22,5 +22,5 @@
     (recur))
 
 (defn emit [action payload]
-  (debug action payload)
+  (debug "event raised" action payload)
   (put! event-queue {:action action :payload payload}))

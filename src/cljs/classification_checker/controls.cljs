@@ -38,7 +38,7 @@
          (if (nil? example)
            (r/as-element [buttons nil nil nil])
            (r/as-element [buttons click-right click-wrong click-skip]))]]])
-    (error (str "A paraphrase must have exactly 2 values:" (str example)))))
+    (warn (str "A paraphrase must have exactly 2 values:" (str example)))))
 
 
 (defn classification-view [title example]
@@ -54,12 +54,14 @@
          [:div title]]
         [ant/layout-content {:class "content"}
          [:div {:class "example"} question]
-         [:div {:style {:width "100%"}} [ant/select {:default-value no-answer :on-change #(reset! selected-answer %)}
-                (for [a (concat [no-answer skip-answer] answers)]
-                  [ant/select-option {:value a} a])]]]
+         [ant/row
+          [ant/col {:span 12}
+           [ant/select {:default-value no-answer :on-change #(reset! selected-answer %)}
+            (for [a (concat [no-answer skip-answer] answers)]
+              [ant/select-option {:value a} a])]]]]
         [ant/layout-footer {:class "footer"}
          [ant/button {:class "right-example" :size "large" :type "primary" :icon "check" :on-click #(dispatcher/emit :example-updated [question @selected-answer])}]]]])
-    (error (str "A classification example must have exactly 2 values: question and string of answers joined with \"|\""))))
+    (warn (str "A classification example must have exactly 2 values: question and string of answers joined with \"|\""))))
 
 
 (defn identification-view []
