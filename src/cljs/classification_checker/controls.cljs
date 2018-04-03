@@ -42,19 +42,24 @@
 
 
 (defn classification-view [title example]
-  (let [[question answers_str] example
-         no-answer "(Нет подходящего ответа)"
-         answers (str/split answers_str #"\|")]
-    [ant/locale-provider {:locale (ant/locales "ru_RU")}
-     [ant/layout
-      [ant/layout-header [:div title]]
-      [ant/layout-content {:class "content"}
-       [:div {:style {:width "100%"}}
-        [:div {:class "example"} question]]]
-      [ant/layout-footer {:class "footer"}
-       [ant/select {:default-value no-answer :on-change #(dispatcher/emit :example-updated [question %]) :style {:width "70%"}}
-        (for [a (concat [no-answer] answers)]
-          [ant/select-option {:value a} a])]]]]))
+  (if (= 2 (count example))
+    (let [[question answers-str] example
+          no-answer "(Нет подходящего ответа)"
+          skip-answer "(Пропустить этот вопрос)"
+          answers (str/split answers-str #"\|")
+          selected-answer (r/atom no-answer)]
+      [ant/locale-provider {:locale (ant/locales "ru_RU")}
+       [ant/layout
+        [ant/layout-header
+         [:div title]]
+        [ant/layout-content {:class "content"}
+         [:div {:class "example"} question]
+         [:div {:style {:width "100%"}} [ant/select {:default-value no-answer :on-change #(reset! selected-answer %)}
+                (for [a (concat [no-answer skip-answer] answers)]
+                  [ant/select-option {:value a} a])]]]
+        [ant/layout-footer {:class "footer"}
+         [ant/button {:class "right-example" :size "large" :type "primary" :icon "check" :on-click #(dispatcher/emit :example-updated [question @selected-answer])}]]]])
+    (error (str "A classification example must have exactly 2 values: question and string of answers joined with \"|\""))))
 
 
 (defn identification-view []
