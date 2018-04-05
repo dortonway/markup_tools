@@ -10,6 +10,7 @@
       [clj-time.coerce :as tc]
       [clj-http.client :as client]
       [clojure.data.json :as json]
+      [adzerk.env :as env]
       [classification-checker.pages :refer [main-page]]
       [classification_checker.middleware :refer [wrap-middleware]]
       [taoensso.sente :as sente]
@@ -17,9 +18,11 @@
       [ring.middleware.anti-forgery :refer [*anti-forgery-token*]]
       [clojure.set :as set]))
 
-(def client-id 156944108305904)
-(def client-secret "b18a88c9654d05b58ee833ad61bf8a63")
-(def redirect-uri "https://localhost:3449/facebook-oauth")
+(env/def
+  CLIENT_ID nil
+  CLIENT_SECRET nil
+  REDIRECT_URI nil
+)
 
 (use 'ring.middleware.session.cookie)
 
@@ -34,11 +37,19 @@
             {:keys [email]} user]
            {:status 201 :session (assoc session :uid email)}))
 
-(defn get-facebook-credentials [code] (client/get (str "https://graph.facebook.com/v2.12/oauth/access_token?client_id=" client-id "&redirect_uri=" redirect-uri "&client_secret=" client-secret "&code=" code)))
-(defn get-facebook-token [code] ((json/read-str ((get-facebook-credentials code) :body) :key-fn keyword) :access_token))
-
-(defn get-facebook-user [code] (client/get (str "https://graph.facebook.com/v2.10/me?fields=email&access_token=" (get-facebook-token code))))
-(defn get-email [code] ((json/read-str ((get-facebook-user code) :body) :key-fn keyword) :email))
+(defn facebook-oauth [ring-req]
+      (def code ((ring-req :query-params) "code"))
+      (def session (ring-req :session))
+      (def facebook-credentials (client/get (str "https://graph.facebook.com/v2.12/oauth/access_token?client_id=" CLIENT_ID "&redirect_uri=" REDIRECT_URI "&client_secret=" CLIENT_SECRET "&code=" code)))
+      (def facebook-token ((json/read-str (facebook-credentials :body) :key-fn keyword) :access_token))
+      (def facebook-user (client/get (str "https://graph.facebook.com/v2.10/me?fields=email&access_token=" facebook-token)))
+      (def email ((json/read-str (facebook-user :body) :key-fn keyword) :email))
+      {
+        :status 302
+        :session (assoc session :uid email :user (assoc (session :user) :email email))
+        :headers {"Location" "/#"}
+      }
+)
 
 (defn app [fin fout]
       (let [packer :edn
@@ -90,22 +101,8 @@
                       (POST "/session/new" req (login-handler req))
 
                       (GET "/facebook-oauth" ring-req
-                           (let [
-                                 {:keys [session query-params]} ring-req
-                                 email (get-email (query-params "code"))]
-                                {
-                                 :status 302
-                                 :session (assoc session :uid email :user (assoc (session :user) :email email))
-                                 :headers {"Location" "/#"}
-                                 }
-                                )
-                           )
-
-                      (GET "/show-session" ring-req
-                           (let [
-                                 {:keys [session]} ring-req] {:status 200 :body session}
-                                )
-                           )
+                           (facebook-oauth ring-req)
+                      )
 
                       (resources "/")
                       (not-found "Not Found"))

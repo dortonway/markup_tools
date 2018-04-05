@@ -21,6 +21,7 @@
                  [org.clojure/clojurescript "1.9.946"
                   :scope "provided"]
                  [keybind "2.2.0"]
+                 [adzerk/env "0.4.0"]
                  [cljs-http "0.1.44"]
                  [com.andrewmcveigh/cljs-time "0.5.2"]
                  [clj-time "0.14.2"]

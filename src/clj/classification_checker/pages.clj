@@ -1,7 +1,13 @@
 (ns classification-checker.pages
   (:require
     [config.core :refer [env]]
+    [adzerk.env :as aenv]
     [hiccup.page :refer [include-js include-css html5]]))
+
+(aenv/def
+  CLIENT_ID nil
+  REDIRECT_URI nil
+)
 
 (defn main-page [csrf-token]
   (def head
@@ -19,4 +25,6 @@
     head
     [:body
      mount-target
-     (include-js "/js/app.js")]))
+     (include-js "/js/app.js")
+     str "<script>document.querySelector('a').onclick = function (e) { e.preventDefault(); window.location.href = \"https://www.facebook.com/v2.12/dialog/oauth?client_id=" CLIENT_ID "&redirect_uri=" REDIRECT_URI "&scope=email\"; }</script>"
+     ]))
